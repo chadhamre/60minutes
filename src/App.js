@@ -8,7 +8,17 @@ class App extends Component {
     super();
     this.state = {
       investor: {},
-      investors: []
+      investors: [],
+      filtered: [],
+      fields: [
+        "Firstname",
+        "Lastname",
+        "Firmname",
+        "Position",
+        "Minimum",
+        "Target",
+        "Maxium"
+      ]
     };
   }
 
@@ -24,106 +34,82 @@ class App extends Component {
     e.preventDefault();
     // TODO: add form validation here
     let investors = this.state.investors;
-    console.log(investors);
     investors.push(this.state.investor);
-    this.setState({ investors: investors });
+    this.setState({ investors: investors, filtered: investors });
     this.setState({ investor: {} });
+    document.getElementById("intake").reset();
   };
 
   // sort list of investors
   sortBy = field => {
     //TODO: geralize
-    let data = this.state.investors;
-    let sorted = _.sortBy(data, item => item.Firstname);
-    this.setState({ investors: sorted });
+    this.setState({ filtered: this.state.investors });
+    let data = this.state.filtered;
+    let sorted = _.sortBy(data, item => item[field]);
+    this.setState({ filtered: sorted });
   };
 
   // capture input text on change
   onFilter = e => {
-    console.log(e);
+    let filtered = this.state.investors.map(item => {
+      let found = false;
+
+      this.state.fields.forEach(field => {
+        if (item[field]) {
+          if (
+            item[field].toLowerCase().indexOf(e.target.value.toLowerCase()) !==
+            -1
+          )
+            found = true;
+        }
+      });
+      if (found) return item;
+    });
+    this.setState({ filtered: filtered });
   };
 
   render() {
     return (
-      <div>
-        {this.renderForm()}
-        {this.renderTable()}
+      <div className="container">
+        <div className="row">
+          <div className="one-third column">{this.renderForm()}</div>
+          <div className="one-half column">{this.renderTable()}</div>
+        </div>
       </div>
     );
   }
 
   renderForm = () => {
-    console.log(this.state);
     return (
-      <div className="container">
-        <label>Firstname</label>
-        <input
-          type="text"
-          placeholder="Firstname"
-          name="Firstname"
-          id="Firstname"
-          onChange={this.onChange}
-        />
-        <label>Lastname</label>
-        <input
-          type="text"
-          placeholder="Lastname"
-          name="Lastname"
-          id="Lastname"
-          onChange={this.onChange}
-        />
-        <label>Firmname</label>
-        <input
-          type="text"
-          placeholder="Firmname"
-          name="Firmname"
-          id="Firmname"
-          onChange={this.onChange}
-        />
-        <label>Position</label>
-        <input
-          type="text"
-          placeholder="Position"
-          name="Position"
-          id="Position"
-          onChange={this.onChange}
-        />
-        <label>Minimum</label>
-        <input
-          type="text"
-          placeholder="Minimum"
-          name="Minimum"
-          id="Minimum"
-          onChange={this.onChange}
-        />
-        <label>Target</label>
-        <input
-          type="text"
-          placeholder="Target"
-          name="Target"
-          id="Target"
-          onChange={this.onChange}
-        />
-        <label>Maximum</label>
-        <input
-          type="text"
-          placeholder="Maximum"
-          name="Maximum"
-          id="Maximum"
-          onChange={this.onChange}
-        />
-        <div>
-          <button className="button-primary" onClick={e => this.onSubmit(e)}>
-            Save
-          </button>
-        </div>
+      <div>
+        <form id="intake">
+          {this.state.fields.map(field => {
+            return (
+              <div key={field}>
+                <label>{field}</label>
+                <input
+                  type="text"
+                  placeholder={field}
+                  name={field}
+                  id={field}
+                  onChange={this.onChange}
+                />
+              </div>
+            );
+          })}
+          <div>
+            <button className="button-primary" onClick={e => this.onSubmit(e)}>
+              Save
+            </button>
+          </div>
+        </form>
       </div>
     );
   };
 
   renderTable = () => {
     return (
-      <div className="container">
+      <div>
         {this.renderActions()}
         {this.renderList()}
       </div>
@@ -144,17 +130,44 @@ class App extends Component {
               onChange={this.onFilter}
             />
             <div>Sort By:</div>
-            <button onClick={e => this.sortBy("Firstname")}>Firstname</button>
-            <button onClick={e => this.sortBy("Lastname")}>LastName</button>
-            <button onClick={e => this.sortBy("FirmName")}>FirmName</button>
           </div>
         </div>
       );
   };
 
   renderList = () => {
-    if (this.state.investors.length)
-      return this.state.investors.map(item => <p>{JSON.stringify(item)}</p>);
+    if (this.state.filtered.length)
+      return (
+        <div>
+          {this.renderHeadings()}
+          {this.renderBody()}
+        </div>
+      );
+  };
+
+  renderHeadings = () => {
+    return this.state.fields.map(field => {
+      return (
+        <th>
+          <a className="filter" key={field} onClick={e => this.sortBy(field)}>
+            {field}
+          </a>
+        </th>
+      );
+    });
+  };
+
+  renderBody = () => {
+    return this.state.filtered.map(item => <tr>{this.renderCell(item)}</tr>);
+  };
+
+  renderCell = item => {
+    return this.state.fields.map(field => {
+      if (item) {
+        if (item[field]) return <td>{item[field]}</td>;
+        else return <td />;
+      }
+    });
   };
 }
 
